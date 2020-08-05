@@ -1,3 +1,14 @@
+# fallback for arbitrary functions/layers
+# since we aren't care about batch dimension, we are free to just set it to 1
+"""
+    outdims(f, isize)
+
+Calculates the output dimensions of `f(x)` where `size(x) == isize`.
+The batch dimension is ignored.
+*Warning: this may be slow depending on `f`*
+"""
+outdims(f, isize) = size(f(ones(Float32, isize..., 1)))[1:end-1]
+
 """
     Chain(layers...)
 
@@ -137,20 +148,20 @@ end
 (a::Dense{<:Any,W})(x::AbstractArray{<:AbstractFloat}) where {T <: Union{Float32,Float64}, W <: AbstractArray{T}} =
   a(T.(x))
 
-"""
-    outdims(l::Dense, isize)
+  """
+  outdims(l::Dense, isize)
 
 Calculate the output dimensions given the input dimensions, `isize`.
 
 ```julia
 m = Dense(10, 5)
-outdims(m, (5, 2)) == (5,)
 outdims(m, (10,)) == (5,)
+outdims(m, (10, 2)) == (5, 2)
 ```
 """
 function outdims(l::Dense, isize)
-    first(isize) == size(l.W, 2) || throw(DimensionMismatch("input size should equal to ($(size(l.W, 2)),), got $isize"))
-    return (size(l.W, 1),)
+  first(isize) == size(l.W, 2) || throw(DimensionMismatch("input size should equal to ($(size(l.W, 2)), ...), got $isize"))
+  return (size(l.W, 1), Base.tail(isize)...)
 end
 
 """
