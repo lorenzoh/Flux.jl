@@ -1,14 +1,3 @@
-# fallback for arbitrary functions/layers
-# since we aren't care about batch dimension, we are free to just set it to 1
-"""
-    outdims(f, isize)
-
-Calculates the output dimensions of `f(x)` where `size(x) == isize`.
-The batch dimension is ignored.
-*Warning: this may be slow depending on `f`*
-"""
-outdims(f, isize) = size(f(ones(Float32, isize..., 1)))[1:end-1]
-
 """
     Chain(layers...)
 
@@ -57,18 +46,6 @@ function Base.show(io::IO, c::Chain)
   join(io, c.layers, ", ")
   print(io, ")")
 end
-
-"""
-    outdims(c::Chain, isize)
-
-Calculate the output dimensions given the input dimensions, `isize`.
-
-```julia
-m = Chain(Conv((3, 3), 3 => 16), Conv((3, 3), 16 => 32))
-outdims(m, (10, 10)) == (6, 6)
-```
-"""
-outdims(c::Chain, isize) = foldr(outdims, reverse(c.layers), init = isize)
 
 # This is a temporary and naive implementation
 # it might be replaced in the future for better performance
@@ -148,22 +125,6 @@ end
 (a::Dense{<:Any,W})(x::AbstractArray{<:AbstractFloat}) where {T <: Union{Float32,Float64}, W <: AbstractArray{T}} =
   a(T.(x))
 
-  """
-  outdims(l::Dense, isize)
-
-Calculate the output dimensions given the input dimensions, `isize`.
-
-```julia
-m = Dense(10, 5)
-outdims(m, (10,)) == (5,)
-outdims(m, (10, 2)) == (5, 2)
-```
-"""
-function outdims(l::Dense, isize)
-  first(isize) == size(l.W, 2) || throw(DimensionMismatch("input size should equal to ($(size(l.W, 2)), ...), got $isize"))
-  return (size(l.W, 1), Base.tail(isize)...)
-end
-
 """
     Diagonal(in::Integer)
 
@@ -192,8 +153,6 @@ end
 function Base.show(io::IO, l::Diagonal)
   print(io, "Diagonal(", length(l.α), ")")
 end
-
-outdims(l::Diagonal, isize) = (length(l.α),)
 
 """
     Maxout(over)
@@ -235,8 +194,6 @@ end
 function (mo::Maxout)(input::AbstractArray)
     mapreduce(f -> f(input), (acc, out) -> max.(acc, out), mo.over)
 end
-
-outdims(l::Maxout, isize) = outdims(first(l.over), isize)
 
 """
     SkipConnection(layer, connection)

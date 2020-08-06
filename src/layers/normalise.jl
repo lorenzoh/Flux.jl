@@ -84,23 +84,6 @@ function Base.show(io::IO, d::Dropout)
 end
 
 """
-    outdims(::Dropout, isize)
-    outdims(::AlphaDropout, isize)
-    outdims(::LayerNorm, isize)
-    outdims(::BatchNorm, isize)
-    outdims(::InstanceNorm, isize)
-    outdims(::GroupNorm, isize)
-
-Calculate the output dimensions given the input dimensions, `isize`.
-For a these layers, `outdims(layer, isize) == isize`.
-
-*Note*: since normalisation layers do not store the input size info,
-  `isize` is directly returned with no dimension checks.
-These definitions exist for convenience.
-"""
-outdims(::Dropout, isize) = isize
-
-"""
     AlphaDropout(p)
 
 A dropout layer. Used in
@@ -135,8 +118,6 @@ end
 testmode!(m::AlphaDropout, mode = true) =
   (m.active = (isnothing(mode) || mode == :auto) ? nothing : !mode; m)
 
-outdims(::AlphaDropout, isize) = isize
-
 """
     LayerNorm(h::Integer)
 
@@ -158,8 +139,6 @@ LayerNorm(h::Integer) =
 function Base.show(io::IO, l::LayerNorm)
   print(io, "LayerNorm(", length(l.diag.α), ")")
 end
-
-outdims(::LayerNorm, isize) = isize
 
 """
     BatchNorm(channels::Integer, σ = identity;
@@ -252,8 +231,6 @@ function Base.show(io::IO, l::BatchNorm)
   (l.λ == identity) || print(io, ", λ = $(l.λ)")
   print(io, ")")
 end
-
-outdims(::BatchNorm, isize) = isize
 
 expand_inst = (x, as) -> reshape(repeat(x, outer=[1, as[length(as)]]), as...)
 
@@ -353,8 +330,6 @@ function Base.show(io::IO, l::InstanceNorm)
   (l.λ == identity) || print(io, ", λ = $(l.λ)")
   print(io, ")")
 end
-
-outdims(::InstanceNorm, isize) = isize
 
 """
     GroupNorm(chs::Integer, G::Integer, λ = identity;
@@ -460,5 +435,3 @@ function Base.show(io::IO, l::GroupNorm)
   (l.λ == identity) || print(io, ", λ = $(l.λ)")
   print(io, ")")
 end
-
-outdims(::GroupNorm, isize) = isize
